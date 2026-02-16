@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: hms
+  datasource:
+    url: jdbc:mysql://localhost:3306/hotel_management
+    username: root
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+logging:
+  level:
+    root: info
+    com:
+      vinayakit:
+        hms:
+          DEBUG
+
+server:
+  port: 8080
+
+
+
