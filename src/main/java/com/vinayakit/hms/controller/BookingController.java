@@ -1,66 +1,63 @@
 package com.vinayakit.hms.controller;
 
-import com.vinayakit.hms.entity.Booking;
-import com.vinayakit.hms.exception.ResourceNotFoundException;
-import com.vinayakit.hms.repository.BookingRepository;
+import com.vinayakit.hms.dto.ApiResponse;
+import com.vinayakit.hms.dto.BookingDto;
+import com.vinayakit.hms.service.BookingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/bookings")
+@RequiredArgsConstructor
 public class BookingController {
 
-    private final BookingRepository bookingRepository;
+    private final BookingService bookingService;
 
-    public BookingController(BookingRepository bookingRepository) {
-        this.bookingRepository = bookingRepository;
+    @PostMapping
+    public ResponseEntity<ApiResponse<BookingDto>> createBooking(
+            @Valid @RequestBody BookingDto bookingDto) {
+        BookingDto createdBooking = bookingService.createBooking(bookingDto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(createdBooking, "Booking created successfully"));
     }
 
     @GetMapping
-    public ResponseEntity<List<Booking>> getAllBooking() {
-        List<Booking> bookingList = bookingRepository.findAll();
-        return ResponseEntity.ok(bookingList);
+    public ResponseEntity<ApiResponse<Page<BookingDto>>> getAllBookings(
+            @PageableDefault(size = 10, sort = "checkIn", direction = Sort.Direction.DESC) Pageable pageable
+            ) {
+        Page<BookingDto> bookings = bookingService.getAllBookings(pageable);
+        return ResponseEntity
+                .ok(ApiResponse.success(bookings));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Booking> getBookingById(@PathVariable Long id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingId", id));
-        return ResponseEntity.ok(booking);
+    public ResponseEntity<ApiResponse<BookingDto>> getBookingById(@PathVariable Long id){
+        BookingDto booking = bookingService.getBookingById(id);
+        return ResponseEntity
+                .ok(ApiResponse.success(booking));
     }
 
-    @PostMapping
-    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
-        Booking savedBooking = bookingRepository.save(booking);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedBooking);
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<BookingDto>> cancelBooking(@PathVariable Long id) {
+        BookingDto cancelledBooking = bookingService.cancelBooking(id);
+        return ResponseEntity
+                .ok(ApiResponse.success(cancelledBooking, "Booking cancelled successfully"));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Booking> updateBooking(@PathVariable Long id, @RequestBody Booking bookingDetails) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingId", id));
-
-        booking.setCustomer(bookingDetails.getCustomer());
-        booking.setRoom(bookingDetails.getRoom());
-        booking.setCheckIn(bookingDetails.getCheckIn());
-        booking.setCheckOut(bookingDetails.getCheckOut());
-        booking.setTotalAmount(bookingDetails.getTotalAmount());
-        booking.setStatus(bookingDetails.getStatus());
-
-        Booking updatedBooking = bookingRepository.save(booking);
-        return ResponseEntity.ok(updatedBooking);
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<ApiResponse<Page<BookingDto>>> getBookingsByCustomer(
+            @PathVariable Long customerId,
+            @PageableDefault(size = 10, sort = "checkIn", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<BookingDto> bookings = bookingService.getBookingsByCustomer(customerId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingId", id));
-
-        bookingRepository.delete(booking);
-        return ResponseEntity.noContent().build();
-    }
 }

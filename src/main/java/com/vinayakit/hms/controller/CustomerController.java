@@ -1,65 +1,94 @@
 package com.vinayakit.hms.controller;
 
-import com.vinayakit.hms.entity.Customer;
-import com.vinayakit.hms.exception.ResourceNotFoundException;
-import com.vinayakit.hms.repository.CustomerRepository;
-import com.vinayakit.hms.repository.RoomRepository;
+import com.vinayakit.hms.dto.ApiResponse;
+import com.vinayakit.hms.dto.BookingDto;
+import com.vinayakit.hms.dto.CustomerDto;
+import com.vinayakit.hms.service.BookingService;
+import com.vinayakit.hms.service.CustomerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/customers")
+@RequiredArgsConstructor
 public class CustomerController {
 
-    private final CustomerRepository customerRepository;
+    private final CustomerService customerService;
+    private final BookingService bookingService;
 
-    public CustomerController(CustomerRepository customerRepository) {
-        this.customerRepository = customerRepository;
+    @PostMapping
+    public ResponseEntity<ApiResponse<CustomerDto>> createCustomer(
+            @Valid @RequestBody CustomerDto customerDto
+    ) {
+        CustomerDto created = customerService.createCustomer(customerDto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(created, "Customer created successfully"));
     }
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomer() {
-        List<Customer> customerList = customerRepository.findAll();
-        return ResponseEntity.ok(customerList);
+    public ResponseEntity<ApiResponse<Page<CustomerDto>>> getAllCustomers(
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<CustomerDto> customers = customerService.getAllCustomers(pageable);
+        return ResponseEntity
+                .ok(ApiResponse.success(customers));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", "customerId", id));
-        return ResponseEntity.ok(customer);
-    }
-
-    @PostMapping
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
-        Customer savedCustomer = customerRepository.save(customer);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCustomer);
+    public ResponseEntity<ApiResponse<CustomerDto>> getCustomerById(@PathVariable Long id) {
+        CustomerDto customer = customerService.getCustomerById(id);
+        return ResponseEntity
+                .ok(ApiResponse.success(customer));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customerDetails) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", "customerId", id));
-
-        customer.setName(customerDetails.getName());
-        customer.setEmail(customerDetails.getEmail());
-        customer.setPhone(customerDetails.getPhone());
-        customer.setAddress(customerDetails.getAddress());
-
-        Customer updatedCustomer = customerRepository.save(customer);
-        return ResponseEntity.ok(updatedCustomer);
+    public ResponseEntity<ApiResponse<CustomerDto>> updateCustomer(
+            @PathVariable Long id,
+            @Valid @RequestBody CustomerDto customerDto
+    ) {
+        CustomerDto updated = customerService.updateCustomer(id,customerDto);
+        return ResponseEntity
+                .ok(ApiResponse.success(updated, "Customer updated successfully"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer", "customerId", id));
+    public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Customer deleted successfully"));
+    }
 
-        customerRepository.delete(customer);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<CustomerDto>>> searchCustomers(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        if (name != null && phone != null) {
+            throw new IllegalArgumentException("Provide only one search parameter: name or phone");
+        }
+        if (name != null) {
+            Page<CustomerDto> results = customerService.searchCustomerByName(name, pageable);
+            return ResponseEntity.ok(ApiResponse.success(results));
+        } else if (phone != null) {
+            Page<CustomerDto> results = customerService.searchCustomerByPhone(phone, pageable);
+            return ResponseEntity.ok(ApiResponse.success(results));
+        } else {
+            throw new IllegalArgumentException("Provide a search parameter: name or phone");
+        }
+    }
+
+    @GetMapping("/{id}/bookings")
+    public ResponseEntity<ApiResponse<Page<BookingDto>>> getCustomerBookingHistory(
+            @PathVariable Long id,
+            @PageableDefault(size = 10, sort = "checkIn", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<BookingDto> bookings = bookingService.getBookingsByCustomer(id, pageable);
+        return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 }
