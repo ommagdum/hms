@@ -1,6 +1,8 @@
 package com.vinayakit.hms.service;
 
 import com.vinayakit.hms.dto.BookingDto;
+import com.vinayakit.hms.dto.BookingRangeItemDto;
+import com.vinayakit.hms.dto.RoomBookingDto;
 import com.vinayakit.hms.entity.Booking;
 import com.vinayakit.hms.entity.Customer;
 import com.vinayakit.hms.entity.Room;
@@ -20,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -110,16 +115,54 @@ public class BookingService {
         return bookingRepository.findAll(pageable).map(this::convertToDto);
     }
 
+    public List<RoomBookingDto> getBookingsInRange(LocalDate startDate, LocalDate endDate) {
+        List<Booking> bookings = bookingRepository.findBookingsInRange(startDate, endDate);
+
+        // Group by room
+        Map<Long, List<BookingRangeItemDto>> map = new HashMap<>();
+        for (Booking b : bookings) {
+            BookingRangeItemDto item = new BookingRangeItemDto(
+                    b.getCustomer().getName(),
+                    b.getCheckIn(),
+                    b.getCheckOut(),
+                    b.getStatus()
+            );
+            map.computeIfAbsent(b.getRoom().getRoomId(), k -> new ArrayList<>()).add(item);
+        }
+
+        // Build response list
+        List<RoomBookingDto> result = new ArrayList<>();
+        for (Map.Entry<Long, List<BookingRangeItemDto>> entry : map.entrySet()) {
+            Room room = roomRepository.findById(entry.getKey()).orElse(null);
+            if (room != null) {
+                result.add(new RoomBookingDto(
+                        room.getRoomId(),
+                        room.getRoomNumber(),
+                        entry.getValue()
+                ));
+            }
+        }
+        return result;
+    }
+
     public BookingDto getBookingById(Long id) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingId", id));
         return convertToDto(booking);
     }
 
+    public Page<BookingDto> getFilteredBookings(String guestName, String roomNumber, String status, Pageable pageable) {
+        Page<Booking> bookings = bookingRepository.findFilteredBookings(guestName, roomNumber, status, pageable);
+        return bookings.map(this::convertToDto);
+    }
+
     private BookingDto convertToDto(Booking booking) {
         BookingDto dto = modelMapper.map(booking, BookingDto.class);
         dto.setCustomerId(booking.getCustomer().getCustomerId());
+        dto.setCustomerName(booking.getCustomer().getName());
         dto.setRoomId(booking.getRoom().getRoomId());
+        dto.setRoomNumber(booking.getRoom().getRoomNumber());
+        dto.setRoomType(booking.getRoom().getRoomType());
         return dto;
     }
 

@@ -19,6 +19,12 @@ public class BookingDto {
     @NotNull(message = "Customer ID is required")
     private Long customerId;
 
+    private String customerName;
+
+    private String roomNumber;
+
+    private String roomType;
+
     @NotNull(message = "Room ID is required")
     private Long roomId;
 

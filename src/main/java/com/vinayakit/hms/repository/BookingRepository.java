@@ -64,4 +64,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Long countByCreatedAtBetweenAndStatus(LocalDateTime start, LocalDateTime end, String status);
 
+    @Query("SELECT b FROM Booking b WHERE b.status != 'CANCELLED' " +
+            "AND b.checkIn < :endDate AND b.checkOut > :startDate")
+    List<Booking> findBookingsInRange(@Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT b FROM Booking b WHERE " +
+            "(:guestName IS NULL OR LOWER(b.customer.name) LIKE LOWER(CONCAT('%', :guestName, '%'))) AND " +
+            "(:roomNumber IS NULL OR b.room.roomNumber = :roomNumber) AND " +
+            "(:status IS NULL OR b.status = :status)")
+    Page<Booking> findFilteredBookings(@Param("guestName") String guestName,
+                                       @Param("roomNumber") String roomNumber,
+                                       @Param("status") String status,
+                                       Pageable pageable);
+
 }
