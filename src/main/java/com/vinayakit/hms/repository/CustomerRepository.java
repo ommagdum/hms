@@ -28,4 +28,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     boolean existsByEmail(@NotBlank(message = "Email is required") @Email(message = "Email should be valid") String email);
 
     boolean existsByPhone(@NotBlank(message = "Phone is required") @Pattern(regexp = "^\\d{10,15}$", message = "Phone must be 10-15 digits") String phone);
+
+    @Query("SELECT COUNT(c) FROM Customer c")
+    Long countTotalCustomers();
 }

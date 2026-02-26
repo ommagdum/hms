@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -39,4 +40,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             nativeQuery = true)
     BigDecimal getTotalRevenueBetween(@Param("startDate") LocalDate startDate,
                                       @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.status ='CONFIRMED' AND b.checkOut >= CURRENT_DATE")
+    Long countActiveBookings();
+
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.status='CONFIRMED'")
+    BigDecimal sumTotalRevenue();
+
+    @Query("SELECT FUNCTION('DATE', b.createdAt) as date, SUM(b.totalAmount) as dailyTotal " +
+            "FROM Booking b WHERE b.status = 'CONFIRMED' AND b.createdAt >= :startDate " +
+            "GROUP BY FUNCTION('DATE', b.createdAt) ORDER BY date")
+    List<Object[]> findDailyRevenueSince(@Param("startDate")LocalDateTime startDate);
+
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b " +
+            "WHERE b.status = 'CONFIRMED' AND b.createdAt BETWEEN :start AND :end")
+    BigDecimal sumRevenueBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT b FROM Booking b WHERE b.checkIn = CURRENT_DATE AND b.status = 'CONFIRMED'")
+    List<Booking> findTodayCheckIns();
+
+    @Query("SELECT b FROM Booking b WHERE b.checkOut = CURRENT_DATE AND b.status = 'CONFIRMED'")
+    List<Booking> findTodayCheckOuts();
+
+    Long countByCreatedAtBetweenAndStatus(LocalDateTime start, LocalDateTime end, String status);
+
 }

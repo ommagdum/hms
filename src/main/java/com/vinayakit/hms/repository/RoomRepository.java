@@ -29,4 +29,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Page<Room> findByStatus(String status, Pageable pageable);
 
     boolean existsByRoomNumber(@NotBlank(message = "Room number is required") String roomNumber);
+
+    @Query("SELECT r.status, COUNT(r) FROM Room r GROUP BY r.status")
+    List<Object[]> countByStatus();
 }

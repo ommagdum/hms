@@ -20,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
+@CrossOrigin("*")
 public class RoomController {
 
     private final RoomService roomService;
