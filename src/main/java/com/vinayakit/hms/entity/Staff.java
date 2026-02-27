@@ -22,6 +22,14 @@ public class Staff {
     @Column(name = "staff_id")
     private Long staffId;
 
+    @Column(unique = true, nullable = false, length = 50)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+
+    private boolean enabled = true;
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 

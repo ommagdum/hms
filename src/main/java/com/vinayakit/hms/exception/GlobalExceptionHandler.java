@@ -101,12 +101,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
+        // Log the full stack trace
+        ex.printStackTrace();  // or use a logger
         ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
-                ex.getMessage(),
+                ex.getMessage(),  // may still be null
                 request.getDescription(false),
                 HttpStatus.BAD_REQUEST.value()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+
 }
