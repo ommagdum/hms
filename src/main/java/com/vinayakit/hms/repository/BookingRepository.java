@@ -78,4 +78,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                        @Param("status") String status,
                                        Pageable pageable);
 
+    @Query("SELECT COUNT(b) > 0 FROM Booking b " +
+            "WHERE b.room.id = :roomId " +
+            "AND b.id != :excludeId " +
+            "AND b.status = 'CONFIRMED' " +
+            "AND (b.checkIn < :checkOut AND b.checkOut > :checkIn)")
+    boolean existsOverlapExcludingSelf(
+            @Param("roomId") Long roomId,
+            @Param("excludeId") Long excludeId,
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut);
+
 }

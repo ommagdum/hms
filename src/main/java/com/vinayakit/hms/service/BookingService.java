@@ -156,6 +156,62 @@ public class BookingService {
         return bookings.map(this::convertToDto);
     }
 
+    @Transactional
+    public BookingDto updateBooking(Long bookingId, BookingDto bookingDto) {
+        // 1. Fetch existing booking
+        Booking existingBooking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingId", bookingId));
+
+        // 2. Check if booking is cancelled
+        if ("CANCELLED".equals(existingBooking.getStatus())) {
+            throw new IllegalArgumentException("Cannot update a cancelled booking");
+        }
+
+        // 3. Validate dates
+        if (bookingDto.getCheckIn().isAfter(bookingDto.getCheckOut())) {
+            throw new InvalidBookingDateException("Check-in date must be before check-out date");
+        }
+        if (bookingDto.getCheckIn().isBefore(LocalDate.now())) {
+            throw new InvalidBookingDateException("Check-in date cannot be in the past");
+        }
+
+        // 4. Fetch new customer and room (if changed)
+        Customer customer = customerRepository.findById(bookingDto.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", "customerId", bookingDto.getCustomerId()));
+
+        Room room = roomRepository.findById(bookingDto.getRoomId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room", "roomId", bookingDto.getRoomId()));
+
+        // 5. Availability check (exclude current booking)
+        boolean overlapExists = bookingRepository.existsOverlapExcludingSelf(
+                room.getRoomId(),
+                bookingId,
+                bookingDto.getCheckIn(),
+                bookingDto.getCheckOut()
+        );
+        if (overlapExists) {
+            throw new RoomUnavailableException("Room is not available for the selected dates");
+        }
+
+        // 6. Recalculate total amount
+        long days = ChronoUnit.DAYS.between(bookingDto.getCheckIn(), bookingDto.getCheckOut());
+        if (days <= 0) {
+            throw new InvalidBookingDateException("Check-out must be after check-in");
+        }
+        BigDecimal totalAmount = room.getPrice().multiply(BigDecimal.valueOf(days));
+
+        // 7. Update fields
+        existingBooking.setCustomer(customer);
+        existingBooking.setRoom(room);
+        existingBooking.setCheckIn(bookingDto.getCheckIn());
+        existingBooking.setCheckOut(bookingDto.getCheckOut());
+        existingBooking.setTotalAmount(totalAmount);
+        // Status remains same (should not be changed via update)
+
+        Booking updatedBooking = bookingRepository.save(existingBooking);
+        return convertToDto(updatedBooking);
+    }
+
     private BookingDto convertToDto(Booking booking) {
         BookingDto dto = modelMapper.map(booking, BookingDto.class);
         dto.setCustomerId(booking.getCustomer().getCustomerId());

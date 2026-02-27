@@ -81,4 +81,12 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success(bookings));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<BookingDto>> updateBooking(
+            @PathVariable Long id,
+            @Valid @RequestBody BookingDto bookingDto) {
+        BookingDto updatedBooking = bookingService.updateBooking(id, bookingDto);
+        return ResponseEntity.ok(ApiResponse.success(updatedBooking, "Booking updated successfully"));
+    }
+
 }
