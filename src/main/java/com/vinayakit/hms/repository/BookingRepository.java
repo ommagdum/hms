@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -88,5 +89,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("excludeId") Long excludeId,
             @Param("checkIn") LocalDate checkIn,
             @Param("checkOut") LocalDate checkOut);
+
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b " +
+            "WHERE b.status = 'CONFIRMED' AND DATE(b.checkIn) = :date")
+    BigDecimal getDailyRevenue(@Param("date") LocalDate date);
+
+    @Query("SELECT new map(DATE(b.checkIn) as date, SUM(b.totalAmount) as revenue, COUNT(b) as count) " +
+            "FROM Booking b WHERE b.status = 'CONFIRMED' AND b.checkIn BETWEEN :start AND :end " +
+            "GROUP BY DATE(b.checkIn) ORDER BY DATE(b.checkIn)")
+    List<Map<String, Object>> getDailyRevenueBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT SUM(FUNCTION('DATEDIFF', b.checkOut, b.checkIn)) FROM Booking b " +
+            "WHERE b.status = 'CONFIRMED' " +
+            "AND FUNCTION('YEAR', b.checkIn) = :year AND FUNCTION('MONTH', b.checkIn) = :month")
+    Long countOccupiedRoomNights(@Param("year") int year, @Param("month") int month);
+
+    @Query("SELECT b FROM Booking b WHERE b.customer.customerId = :customerId ORDER BY b.checkIn DESC")
+    List<Booking> findByCustomerIdOrderByCheckInDesc(@Param("customerId") Long customerId);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE DATE(b.checkIn) = :date AND b.status = :status")
+    Long countByCheckInDateAndStatus(@Param("date") LocalDate date, @Param("status") String status);
 
 }

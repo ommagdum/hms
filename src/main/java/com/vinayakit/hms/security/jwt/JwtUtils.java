@@ -2,7 +2,6 @@ package com.vinayakit.hms.security.jwt;
 
 import com.vinayakit.hms.security.UserDetailsImpl;
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,10 +26,12 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    Instant now = Instant.now();
+
 
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+
+        Instant now = Instant.now();
 
         return Jwts.builder()
                 .setSubject((userPrincipal.getUsername()))
