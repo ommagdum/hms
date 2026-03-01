@@ -45,13 +45,19 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/rooms/available").permitAll()
+
+                        // Role-based rules
                         .requestMatchers("/api/staff/**").hasRole("ADMIN")
                         .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "MANAGER")  // Added reports
                         .requestMatchers("/api/bookings/**").hasAnyRole("ADMIN", "RECEPTIONIST", "MANAGER")
-                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "RECEPTIONIST", "MANAGER") // Added MANAGER
                         .requestMatchers("/api/rooms/**").hasAnyRole("ADMIN", "RECEPTIONIST")
+                        .requestMatchers("/api/invoice/**").hasAnyRole("ADMIN", "MANAGER", "RECEPTIONIST")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
