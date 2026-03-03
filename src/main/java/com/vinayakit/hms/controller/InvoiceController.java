@@ -16,7 +16,6 @@ import java.io.ByteArrayInputStream;
 @RestController
 @RequestMapping("/api/invoice")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class InvoiceController {
 
     private final InvoiceService invoiceService;

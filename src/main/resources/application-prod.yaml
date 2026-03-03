@@ -1,19 +1,32 @@
 spring:
   application:
     name: hms
+
+
   datasource:
-    url: jdbc:mysql://localhost:3306/hotel_management
+    url: ${SPRING_DATASOURCE_URL}
     username: root
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
+        format_sql: false
+
+
   mail:
     host: smtp.office365.com
     port: 587
@@ -25,9 +38,16 @@ spring:
           auth: true
           starttls:
             enable: true
-cors:
-  allowed-origins: "*"
 
+
+  sql:
+    init:
+      mode: never
+
+cors:
+  allowed-origins: ${FRONTEND_URLS}
+
+# ===== INVOICE =====
 invoice:
   tax-rate: 18
   company:
@@ -36,18 +56,20 @@ invoice:
     phone: "+1-800-555-0123"
     address: "123 Hotel Street, City, Country"
 
+# ===== LOGGING =====
 logging:
   level:
-    root: info
-    com:
-      vinayakit:
-        hms:
-          DEBUG
+    root: INFO
+    com.vinayakit.hms: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
 
+# ===== SERVER =====
 server:
   port: 8080
 
+# ===== JWT =====
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expirationMs: 8600000
+    expirationMs: 86400000

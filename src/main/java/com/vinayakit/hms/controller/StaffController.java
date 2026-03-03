@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/staff")
-@CrossOrigin("*")
 public class StaffController {
 
     private final PasswordEncoder passwordEncoder;
