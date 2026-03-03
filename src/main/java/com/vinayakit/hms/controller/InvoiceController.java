@@ -1,6 +1,8 @@
 package com.vinayakit.hms.controller;
 
 import com.vinayakit.hms.dto.ApiResponse;
+import com.vinayakit.hms.exception.ResourceNotFoundException;
+import com.vinayakit.hms.repository.BookingRepository;
 import com.vinayakit.hms.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -18,6 +20,7 @@ import java.io.ByteArrayInputStream;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final BookingRepository bookingRepository;
 
     @GetMapping("/{bookingId}")
     public ResponseEntity<InputStreamResource> getInvoicePdf(@PathVariable Long bookingId) {
@@ -34,6 +37,9 @@ public class InvoiceController {
 
     @PostMapping("/{bookingId}/send")
     public ResponseEntity<ApiResponse<String>> sendInvoiceEmail(@PathVariable Long bookingId) {
+        if (!bookingRepository.existsById(bookingId)) {
+            throw new ResourceNotFoundException("Booking", "id", bookingId);
+        }
         invoiceService.sendInvoiceEmail(bookingId, null);
         return ResponseEntity.ok(ApiResponse.success("Invoice sent successfully to customer email"));
     }

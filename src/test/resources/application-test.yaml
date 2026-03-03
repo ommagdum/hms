@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  sql:
+    init:
+      mode: never
+
+app:
+  jwt:
+    secret: mySecretKeyForJWTGenerationWithAtLeast32CharactersLong!
+    expirationMs: 86400000
+
+invoice:
+  tax-rate: 18
+  company:
+    name: "Test Hotel"
+    email: "test@hotel.com"
+    phone: "123-456-7890"
+    address: "123 Test St"
